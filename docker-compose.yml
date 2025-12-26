@@ -1,23 +1,31 @@
-services:
-  app:
-    build:
-      context: .
-    environment:
-      GOMODCACHE: /go/src/app/.modcache
-      GOCACHE: /go/src/app/.cache
-    volumes:
-      - "./app:/go/src/app"
-    ports:
-      - "8080:8080"
-    depends_on:
-      - db
+version: '3.8'
 
-  db:
+services:
+  mysql:
     image: mysql:8.0
+    container_name: backend_takehome_mysql
     environment:
       MYSQL_ROOT_PASSWORD: abc123
       MYSQL_DATABASE: appdb
-    volumes:
-      - "./.service-db:/var/lib/mysql"
     ports:
-      - "3333:3306"
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  app:
+    build: .
+    container_name: backend_takehome_app
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+    environment:
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: abc123
+      DB_NAME: appdb
+    depends_on:
+      - mysql
+
+volumes:
+  mysql_data:

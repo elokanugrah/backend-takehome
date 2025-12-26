@@ -1,11 +1,15 @@
-FROM golang:1.21.0
+FROM golang:1.21
 
-ENV GIN_MODE release
+WORKDIR /app
 
-WORKDIR /go/src/app
+# Install Air for live reloading
+RUN go install github.com/cosmtrek/air@v1.49.0
 
-RUN go install github.com/air-verse/air@latest
+COPY go.mod go.sum ./
+RUN go mod download
 
-COPY ./app .
+COPY . .
 
-CMD air
+EXPOSE 8080
+
+CMD ["air"]
