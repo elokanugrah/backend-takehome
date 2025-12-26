@@ -17,8 +17,6 @@ services:
     container_name: backend_takehome_app
     ports:
       - "8080:8080"
-    volumes:
-      - .:/app
     environment:
       SERVER_PORT: ${SERVER_PORT}
       DB_HOST: mysql
