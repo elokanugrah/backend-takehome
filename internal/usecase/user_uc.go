@@ -19,18 +19,18 @@ func NewUserUseCase(ur domain.UserRepository, as AuthService) *UserUseCase {
 	}
 }
 
-func (uc *UserUseCase) Register(ctx context.Context, username, email, password string) (*domain.User, error) {
+func (uc *UserUseCase) Register(ctx context.Context, name, email, password string) (*domain.User, error) {
 	// Check if user already exists
-	existingUser, err := uc.userRepo.FindByUsername(ctx, username)
+	existingUser, err := uc.userRepo.FindByEmail(ctx, email)
 	if err != nil {
 		return nil, err
 	}
 	if existingUser != nil {
-		return nil, errors.New("username already taken")
+		return nil, errors.New("email already taken")
 	}
 
 	// Create new user domain object
-	newUser, err := domain.NewUser(username, email, password)
+	newUser, err := domain.NewUser(name, email, password)
 	if err != nil {
 		return nil, err
 	}
@@ -43,9 +43,9 @@ func (uc *UserUseCase) Register(ctx context.Context, username, email, password s
 	return newUser, nil
 }
 
-func (uc *UserUseCase) Login(ctx context.Context, username, password string) (string, error) {
-	// Find user by username
-	user, err := uc.userRepo.FindByUsername(ctx, username)
+func (uc *UserUseCase) Login(ctx context.Context, email, password string) (string, error) {
+	// Find user by email
+	user, err := uc.userRepo.FindByEmail(ctx, email)
 	if err != nil {
 		return "", err
 	}

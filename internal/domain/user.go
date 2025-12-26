@@ -3,12 +3,14 @@ package domain
 import (
 	"context"
 	"errors"
+	"net/mail"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
-var ErrInvalidCredentials = errors.New("invalid username or password")
+var ErrInvalidCredentials = errors.New("invalid email or password")
+var ErrInvalidEmail = errors.New("invalid email format")
 
 type User struct {
 	ID           int       `json:"id"`
@@ -20,6 +22,10 @@ type User struct {
 }
 
 func NewUser(name, email, password string) (*User, error) {
+	if _, err := mail.ParseAddress(email); err != nil {
+		return nil, ErrInvalidEmail
+	}
+
 	// Generate hash from the password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -45,5 +51,5 @@ func (u *User) CheckPassword(password string) error {
 //go:generate mockery --name UserRepository --output ./mocks --case=snake
 type UserRepository interface {
 	Save(ctx context.Context, user *User) error
-	FindByUsername(ctx context.Context, username string) (*User, error)
+	FindByEmail(ctx context.Context, email string) (*User, error)
 }

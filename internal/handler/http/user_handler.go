@@ -14,7 +14,7 @@ func (h *Handler) Register(c *gin.Context) {
 		return
 	}
 
-	user, err := h.userUseCase.Register(c.Request.Context(), req.Username, req.Email, req.Password)
+	user, err := h.userUseCase.Register(c.Request.Context(), req.Email, req.Email, req.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register user: " + err.Error()})
 		return
@@ -30,7 +30,7 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := h.userUseCase.Login(c.Request.Context(), req.Username, req.Password)
+	token, err := h.userUseCase.Login(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return

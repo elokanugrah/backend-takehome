@@ -15,13 +15,13 @@ type userRepository struct {
 	DB *sql.DB
 }
 
-// FindByUsername implements domain.UserRepository.
-func (r *userRepository) FindByUsername(ctx context.Context, username string) (*domain.User, error) {
+// FindByEmail implements domain.UserRepository.
+func (r *userRepository) FindByEmail(ctx context.Context, email string) (*domain.User, error) {
 	query := `SELECT id, name, email, password_hash, created_at, updated_at 
-			   FROM users WHERE name = ?`
+			   FROM users WHERE email = ?`
 	var u domain.User
 
-	err := r.DB.QueryRowContext(ctx, query, username).Scan(
+	err := r.DB.QueryRowContext(ctx, query, email).Scan(
 		&u.ID, &u.Name, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt,
 	)
 
