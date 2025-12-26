@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/elokanugrah/backend-takehome/app/config"
-	"github.com/elokanugrah/backend-takehome/app/database"
+	"github.com/elokanugrah/backend-takehome/internal/config"
+	"github.com/elokanugrah/backend-takehome/internal/database"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -13,10 +13,7 @@ func main() {
 	cfg := config.LoadConfig()
 
 	// Connect to the database
-	db, err := database.NewMySQLDB(cfg)
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-	}
+	db := database.NewMySQLDB(cfg)
 	defer db.Close()
 
 	log.Println("Starting database seeding...")
