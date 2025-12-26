@@ -5,8 +5,8 @@ services:
     image: mysql:8.0
     container_name: backend_takehome_mysql
     environment:
-      MYSQL_ROOT_PASSWORD: abc123
-      MYSQL_DATABASE: appdb
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
     ports:
       - "3306:3306"
     volumes:
@@ -20,10 +20,11 @@ services:
     volumes:
       - .:/app
     environment:
+      SERVER_PORT: ${SERVER_PORT}
       DB_HOST: mysql
-      DB_USER: root
-      DB_PASSWORD: abc123
-      DB_NAME: appdb
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
     depends_on:
       - mysql
 
