@@ -48,6 +48,8 @@ Create a RESTful API using Golang that allows users to perform CRUD operations o
 - `POST /posts/{id}/comments` - Add a comment to a blog post.
 - `GET /posts/{id}/comments` - List all comments for a blog post.
 
+> **Note:** A Postman collection is available in the `assets` folder to assist with testing the API endpoints.
+
 ### Database Designs
 
 ![ER Diagram](assets/er_diagram.png)
