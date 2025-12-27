@@ -31,16 +31,19 @@ func main() {
 
 	// Initialize Repository Layer
 	userRepo := repository.NewUserRepository(db)
+	postRepo := repository.NewPostRepository(db)
 	// txManager := repository.NewTransactionManager(db)
 
 	// Initialize Usecase Layer
 	userUseCase := usecase.NewUserUseCase(userRepo, authService)
+	postUseCase := usecase.NewPostUseCase(postRepo)
 
 	// Initialize Delivery Layer (Handler)
 	apiHandler := httpDelivery.NewHandler(userUseCase, authService)
+	postHandler := httpDelivery.NewPostHandler(postUseCase)
 
 	// Setup Router
-	router := httpDelivery.SetupRouter(apiHandler)
+	router := httpDelivery.SetupRouter(apiHandler, postHandler)
 
 	// --- GRACEFUL SHUTDOWN SETUP ---
 	srv := &http.Server{
