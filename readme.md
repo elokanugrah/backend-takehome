@@ -50,8 +50,7 @@ Create a RESTful API using Golang that allows users to perform CRUD operations o
 
 ### Database Designs
 
-Provide a MySQL schema design that reflects the above entities and their relationships.
-Ensure proper indexing for performance optimization.
+![ER Diagram](assets/er_diagram.png)
 
 ## Evaluation Criteria
 
@@ -62,29 +61,65 @@ Ensure proper indexing for performance optimization.
 
 ## Setup Instructions
 
-### Option 1: Using Docker
+### Prerequisites
 
-If you have Docker installed, you can start the app with the following commands:
+Ensure you have the following installed on your local machine:
+- **Go** (version 1.21 or later)
+- **Docker** & **Docker Compose**
+- **Make** (optional, but recommended for running commands)
 
+### 1. Configuration
+
+Create a `.env` file based on the example provided. This file contains database credentials and configuration.
+
+```bash
+cp .env.example .env
 ```
-docker-compose build
-docker-compose up
+
+### 2. Running the Application
+
+#### Option A: Using Docker (Recommended)
+
+1.  **Start the services (MySQL and API):**
+    ```bash
+    docker-compose up -d --build
+    ```
+
+    *Database migrations will be applied automatically by the `migrate` container.*
+
+2.  **Seed Database (Optional):**
+    Populate the database with dummy users.
+    ```bash
+    make seed
+    ```
+
+The server will be running at `http://localhost:8080`.
+
+#### Option B: Manual Setup
+
+1.  **Start MySQL:**
+    You can use Docker to run just the database.
+    ```bash
+    docker-compose up -d mysql
+    ```
+
+2.  **Run Migrations:**
+    ```bash
+    make migrate-up
+    ```
+
+3.  **Run the API:**
+    ```bash
+    go run cmd/api/main.go
+    ```
+
+### 3. Running Tests
+
+Run the unit tests for the Domain and Usecase layers:
+
+```bash
+go test -v ./internal/domain/... ./internal/usecase/...
 ```
-
-The server will be up and running at http://localhost:8080.
-
-### Option 2: Manual Setup
-
-If you prefer to set up the web server manually, ensure you have the following prerequisites:
-
-- Go version 1.21.0
-- MySQL version 8.0
-
-Once the prerequisites are ready:
-
-1. Install [Air](https://github.com/air-verse/air), a live reload tool for Go.
-2. Navigate to the `./app` directory.
-3. Start the server by running `air`.
 
 ## Submission Instructions
 

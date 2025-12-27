@@ -9,6 +9,10 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
 
   app:
     build: .
@@ -22,7 +26,18 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
+
+  migrate:
+    image: migrate/migrate
+    container_name: backend_takehome_migrate
+    volumes:
+      - ./migration:/migrations
+    command: ["-path", "/migrations", "-database", "mysql://${DB_USER}:${DB_PASSWORD}@tcp(mysql:3306)/${DB_NAME}", "up"]
+    depends_on:
+      mysql:
+        condition: service_healthy
 
 volumes:
   mysql_data:
