@@ -9,12 +9,14 @@ import (
 )
 
 type PostUseCase struct {
-	postRepo domain.PostRepository
+	postRepo  domain.PostRepository
+	txManager TransactionManager
 }
 
-func NewPostUseCase(pr domain.PostRepository) *PostUseCase {
+func NewPostUseCase(pr domain.PostRepository, tm TransactionManager) *PostUseCase {
 	return &PostUseCase{
-		postRepo: pr,
+		postRepo:  pr,
+		txManager: tm,
 	}
 }
 
@@ -23,13 +25,28 @@ func (uc *PostUseCase) Create(ctx context.Context, title, content string, author
 		return nil, errors.New("title and content are required")
 	}
 
-	post := domain.NewPost(title, content, authorID)
-	if err := uc.postRepo.Save(ctx, post); err != nil {
+	var createdPost *domain.Post
+
+	err := uc.txManager.WithTransaction(ctx, func(txCtx context.Context) error {
+		post := domain.NewPost(title, content, authorID)
+		if err := uc.postRepo.Save(txCtx, post); err != nil {
+			return err
+		}
+
+		// Fetch the full post details (including author info) to return
+		p, err := uc.GetByID(txCtx, post.ID)
+		if err != nil {
+			return err
+		}
+		createdPost = p
+		return nil
+	})
+
+	if err != nil {
 		return nil, err
 	}
 
-	// Fetch the full post details (including author info) to return
-	return uc.GetByID(ctx, post.ID)
+	return createdPost, nil
 }
 
 func (uc *PostUseCase) GetAll(ctx context.Context) ([]domain.Post, error) {
@@ -41,39 +58,52 @@ func (uc *PostUseCase) GetByID(ctx context.Context, id int) (*domain.Post, error
 }
 
 func (uc *PostUseCase) Update(ctx context.Context, id int, title, content string, authorID int) (*domain.Post, error) {
-	post, err := uc.postRepo.FindByID(ctx, id)
+	var updatedPost *domain.Post
+
+	err := uc.txManager.WithTransaction(ctx, func(txCtx context.Context) error {
+		post, err := uc.postRepo.FindByID(txCtx, id)
+		if err != nil {
+			return err
+		}
+
+		if post.AuthorID != authorID {
+			return errors.New("forbidden: only the author can update this post")
+		}
+
+		if title != "" {
+			post.Title = title
+		}
+		if content != "" {
+			post.Content = content
+		}
+		post.UpdatedAt = time.Now()
+
+		if err := uc.postRepo.Update(txCtx, post); err != nil {
+			return err
+		}
+
+		updatedPost = post
+		return nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
 
-	if post.AuthorID != authorID {
-		return nil, errors.New("forbidden: only the author can update this post")
-	}
-
-	if title != "" {
-		post.Title = title
-	}
-	if content != "" {
-		post.Content = content
-	}
-	post.UpdatedAt = time.Now()
-
-	if err := uc.postRepo.Update(ctx, post); err != nil {
-		return nil, err
-	}
-
-	return post, nil
+	return updatedPost, nil
 }
 
 func (uc *PostUseCase) Delete(ctx context.Context, id int, authorID int) error {
-	post, err := uc.postRepo.FindByID(ctx, id)
-	if err != nil {
-		return err
-	}
+	return uc.txManager.WithTransaction(ctx, func(txCtx context.Context) error {
+		post, err := uc.postRepo.FindByID(txCtx, id)
+		if err != nil {
+			return err
+		}
 
-	if post.AuthorID != authorID {
-		return errors.New("forbidden: only the author can delete this post")
-	}
+		if post.AuthorID != authorID {
+			return errors.New("forbidden: only the author can delete this post")
+		}
 
-	return uc.postRepo.Delete(ctx, id)
+		return uc.postRepo.Delete(txCtx, id)
+	})
 }

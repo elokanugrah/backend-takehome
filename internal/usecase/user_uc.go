@@ -10,37 +10,47 @@ import (
 type UserUseCase struct {
 	userRepo    domain.UserRepository
 	authService AuthService
+	txManager   TransactionManager
 }
 
-func NewUserUseCase(ur domain.UserRepository, as AuthService) *UserUseCase {
+func NewUserUseCase(ur domain.UserRepository, as AuthService, tm TransactionManager) *UserUseCase {
 	return &UserUseCase{
 		userRepo:    ur,
 		authService: as,
+		txManager:   tm,
 	}
 }
 
 func (uc *UserUseCase) Register(ctx context.Context, name, email, password string) (*domain.User, error) {
-	// Check if user already exists
-	existingUser, err := uc.userRepo.FindByEmail(ctx, email)
+	var registeredUser *domain.User
+
+	err := uc.txManager.WithTransaction(ctx, func(txCtx context.Context) error {
+		existingUser, err := uc.userRepo.FindByEmail(txCtx, email)
+		if err != nil {
+			return err
+		}
+		if existingUser != nil {
+			return errors.New("email already taken")
+		}
+
+		newUser, err := domain.NewUser(name, email, password)
+		if err != nil {
+			return err
+		}
+
+		if err := uc.userRepo.Save(txCtx, newUser); err != nil {
+			return err
+		}
+
+		registeredUser = newUser
+		return nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
-	if existingUser != nil {
-		return nil, errors.New("email already taken")
-	}
 
-	// Create new user domain object
-	newUser, err := domain.NewUser(name, email, password)
-	if err != nil {
-		return nil, err
-	}
-
-	// Save to repository
-	if err := uc.userRepo.Save(ctx, newUser); err != nil {
-		return nil, err
-	}
-
-	return newUser, nil
+	return registeredUser, nil
 }
 
 func (uc *UserUseCase) Login(ctx context.Context, email, password string) (string, error) {

@@ -50,3 +50,10 @@ func (tm *SqlTransactionManager) WithTransaction(ctx context.Context, fn func(tx
 
 	return tx.Commit()
 }
+
+// dbExecutor defines the methods shared by *sql.DB and *sql.Tx
+type dbExecutor interface {
+	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+}

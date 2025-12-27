@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/elokanugrah/backend-takehome/internal/domain"
+	"github.com/go-sql-driver/mysql"
 )
 
 var _ domain.UserRepository = (*userRepository)(nil)
@@ -15,13 +16,20 @@ type userRepository struct {
 	DB *sql.DB
 }
 
+func (r *userRepository) getExecutor(ctx context.Context) dbExecutor {
+	if tx, ok := ctx.Value(txKey{}).(*sql.Tx); ok {
+		return tx
+	}
+	return r.DB
+}
+
 // FindByEmail implements domain.UserRepository.
 func (r *userRepository) FindByEmail(ctx context.Context, email string) (*domain.User, error) {
 	query := `SELECT id, name, email, password_hash, created_at, updated_at 
 			   FROM users WHERE email = ?`
 	var u domain.User
 
-	err := r.DB.QueryRowContext(ctx, query, email).Scan(
+	err := r.getExecutor(ctx).QueryRowContext(ctx, query, email).Scan(
 		&u.ID, &u.Name, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt,
 	)
 
@@ -40,7 +48,7 @@ func (r *userRepository) Save(ctx context.Context, user *domain.User) error {
 	query := `INSERT INTO users (name, email, password_hash, created_at, updated_at) 
 			   VALUES (?, ?, ?, ?, ?)`
 
-	res, err := r.DB.ExecContext(ctx, query,
+	res, err := r.getExecutor(ctx).ExecContext(ctx, query,
 		user.Name,
 		user.Email,
 		user.PasswordHash,
@@ -49,6 +57,11 @@ func (r *userRepository) Save(ctx context.Context, user *domain.User) error {
 	)
 
 	if err != nil {
+		// Handle Race Condition: Duplicate Entry error from MySQL
+		var mysqlErr *mysql.MySQLError
+		if errors.As(err, &mysqlErr) && mysqlErr.Number == 1062 {
+			return errors.New("email already taken")
+		}
 		return fmt.Errorf("error saving user: %w", err)
 	}
 

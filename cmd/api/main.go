@@ -32,11 +32,11 @@ func main() {
 	// Initialize Repository Layer
 	userRepo := repository.NewUserRepository(db)
 	postRepo := repository.NewPostRepository(db)
-	// txManager := repository.NewTransactionManager(db)
+	txManager := repository.NewTransactionManager(db)
 
 	// Initialize Usecase Layer
-	userUseCase := usecase.NewUserUseCase(userRepo, authService)
-	postUseCase := usecase.NewPostUseCase(postRepo)
+	userUseCase := usecase.NewUserUseCase(userRepo, authService, txManager)
+	postUseCase := usecase.NewPostUseCase(postRepo, txManager)
 
 	// Initialize Delivery Layer (Handler)
 	apiHandler := httpDelivery.NewHandler(userUseCase, authService)
