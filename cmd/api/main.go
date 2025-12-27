@@ -32,18 +32,21 @@ func main() {
 	// Initialize Repository Layer
 	userRepo := repository.NewUserRepository(db)
 	postRepo := repository.NewPostRepository(db)
+	commentRepo := repository.NewCommentRepository(db)
 	txManager := repository.NewTransactionManager(db)
 
 	// Initialize Usecase Layer
 	userUseCase := usecase.NewUserUseCase(userRepo, authService, txManager)
 	postUseCase := usecase.NewPostUseCase(postRepo, txManager)
+	commentUseCase := usecase.NewCommentUseCase(commentRepo, postRepo, userRepo, txManager)
 
 	// Initialize Delivery Layer (Handler)
 	apiHandler := httpDelivery.NewHandler(userUseCase, authService)
 	postHandler := httpDelivery.NewPostHandler(postUseCase)
+	commentHandler := httpDelivery.NewCommentHandler(commentUseCase)
 
 	// Setup Router
-	router := httpDelivery.SetupRouter(apiHandler, postHandler)
+	router := httpDelivery.SetupRouter(apiHandler, postHandler, commentHandler)
 
 	// --- GRACEFUL SHUTDOWN SETUP ---
 	srv := &http.Server{

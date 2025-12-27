@@ -43,6 +43,26 @@ func (r *userRepository) FindByEmail(ctx context.Context, email string) (*domain
 	return &u, nil
 }
 
+// FindByID implements domain.UserRepository.
+func (r *userRepository) FindByID(ctx context.Context, id int) (*domain.User, error) {
+	query := `SELECT id, name, email, password_hash, created_at, updated_at 
+			   FROM users WHERE id = ?`
+	var u domain.User
+
+	err := r.getExecutor(ctx).QueryRowContext(ctx, query, id).Scan(
+		&u.ID, &u.Name, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil // Return nil, nil to indicate not found
+		}
+		return nil, fmt.Errorf("error scanning user: %w", err)
+	}
+
+	return &u, nil
+}
+
 // Save implements domain.UserRepository.
 func (r *userRepository) Save(ctx context.Context, user *domain.User) error {
 	query := `INSERT INTO users (name, email, password_hash, created_at, updated_at) 
